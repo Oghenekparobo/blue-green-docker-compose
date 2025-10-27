@@ -42,16 +42,16 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "${PORT:-8080}:80" # ← Var for optional PORT
+      - "${PORT:-8080}:80"
     volumes:
       - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ./nginx-reload.sh:/docker-entrypoint.d/40-nginx-reload.sh:ro # ← Add for reload support
+      - ./nginx-reload.sh:/docker-entrypoint.d/40-nginx-reload.sh:ro
     environment:
       - ACTIVE_POOL=${ACTIVE_POOL}
-      - BACKUP_POOL=green # ← Add to .env too (for dynamic backup)
-      - APP_PORT=${APP_PORT:-3000} # ← Var, default 3000
+      - BACKUP_POOL=green
+      - APP_PORT=${APP_PORT:-3000}
     depends_on:
       app_blue:
         condition: service_healthy
       app_green:
-        condition: service_healthy # ← Fixed indent (2 spaces under app_blue block)
+        condition: service_healthy
