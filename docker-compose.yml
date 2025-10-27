@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  app_blue:
+    image: ${BLUE_IMAGE}
+    platform: linux/amd64
+    environment:
+      - APP_POOL=blue
+      - RELEASE_ID=${RELEASE_ID_BLUE}
+      - PORT=${APP_PORT}
+    ports:
+      - "8081:3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/healthz || exit 1",
+        ]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+
+  app_green:
+    image: ${GREEN_IMAGE}
+    platform: linux/amd64
+    environment:
+      - APP_POOL=green
+      - RELEASE_ID=${RELEASE_ID_GREEN}
+      - PORT=${APP_PORT}
+    ports:
+      - "8082:3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/healthz || exit 1",
+        ]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    environment:
+      - ACTIVE_POOL=${ACTIVE_POOL}
+      - APP_PORT=3000
+    depends_on:
+      app_blue:
+        condition: service_healthy
+      app_green:
+        condition: service_healthy

@@ -1,0 +1,27 @@
+upstream active_pool {
+    server app_blue:3000 max_fails=1 fail_timeout=5s;
+    server app_green:3000 max_fails=1 fail_timeout=5s backup;
+}
+
+server {
+    listen 80;
+    
+    location / {
+        proxy_pass http://active_pool;
+        
+        # Failover configuration
+        proxy_next_upstream error timeout http_500 http_502 http_503 http_504;
+        proxy_next_upstream_timeout 3s;
+        proxy_next_upstream_tries 2;
+
+        # Tight timeouts
+        proxy_connect_timeout 2s;
+        proxy_send_timeout 3s;
+        proxy_read_timeout 3s;
+
+        # Forward headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
