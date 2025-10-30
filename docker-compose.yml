@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   app_blue:
     image: ${BLUE_IMAGE}
@@ -17,7 +19,8 @@ services:
       interval: 5s
       timeout: 2s
       retries: 3
-      start_period: 10s
+      start_period: 30s
+    restart: unless-stopped
 
   app_green:
     image: ${GREEN_IMAGE}
@@ -37,21 +40,46 @@ services:
       interval: 5s
       timeout: 2s
       retries: 3
-      start_period: 10s
+      start_period: 30s
+    restart: unless-stopped
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.25-alpine
     ports:
       - "${PORT:-8080}:80"
-    volumes:
-      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - ./nginx-reload.sh:/docker-entrypoint.d/40-nginx-reload.sh:ro
     environment:
       - ACTIVE_POOL=${ACTIVE_POOL}
-      - BACKUP_POOL=green
+      - BACKUP_POOL=${BACKUP_POOL}
       - APP_PORT=${APP_PORT:-3000}
+    volumes:
+      # ✅ Templated config auto-renders at container start
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      # ✅ Reload helper (optional)
+      - ./nginx-reload.sh:/docker-entrypoint.d/40-nginx-reload.sh:ro
+      # ✅ Shared logs volume
+      - nginx-logs:/var/log/nginx
     depends_on:
       app_blue:
         condition: service_healthy
       app_green:
         condition: service_healthy
+    restart: unless-stopped
+    command: ["/docker-entrypoint.sh", "nginx", "-g", "daemon off;"]
+
+  alert_watcher:
+    build: .
+    volumes:
+      - nginx-logs:/var/log/nginx
+    environment:
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - ACTIVE_POOL=${ACTIVE_POOL}
+      - ERROR_RATE_THRESHOLD=${ERROR_RATE_THRESHOLD:-2}
+      - WINDOW_SIZE=${WINDOW_SIZE:-200}
+      - ALERT_COOLDOWN_SEC=${ALERT_COOLDOWN_SEC:-300}
+    depends_on:
+      - nginx
+    mem_limit: 1024m
+    restart: unless-stopped
+
+volumes:
+  nginx-logs:

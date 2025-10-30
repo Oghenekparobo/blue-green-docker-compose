@@ -391,3 +391,13 @@ MIT
 Oghenekparobo Stephen - HNG Internship Stage 2 DevOps Task
 
 ---
+
+# Blue/Green Deployment - Stage 3: Observability & Alerts
+
+## Setup
+
+```bash
+cp .env.example .env
+# Edit .env → add your SLACK_WEBHOOK_URL
+docker compose up -d
+```
