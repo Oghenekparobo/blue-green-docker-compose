@@ -3,7 +3,7 @@ import sys
 import os
 import re
 import time
-import io  # <-- ADD THIS LINE
+import io  
 import requests
 from collections import deque
 
@@ -25,7 +25,7 @@ last_alert_time = {}
 log_file = '/var/log/nginx/access_file.log'
 
 
-# Reduced skip to see logs faster
+
 SKIP_ON_STARTUP = 10
 
 def parse_log_line(line):
@@ -133,13 +133,13 @@ consecutive_parse_failures = 0
 
 try:
     with open(log_file, 'r') as f:
-        # Check if file is seekable (regular file vs pipe/fifo)
+        
         try:
             f.seek(0, 2)
             print("✅ File is seekable - tailing from end", flush=True)
         except (OSError, io.UnsupportedOperation):
             print("⚠️  File is not seekable (pipe/fifo) - reading from current position", flush=True)
-            # For pipes, just start reading from wherever we are
+       
             pass
         
         while True:
@@ -182,7 +182,7 @@ try:
                     error_count = sum(1 for _, err in window if err)
                     error_rate = (error_count / len(window)) * 100
                     
-                    if error_count > 0:  # Only log when there are errors
+                    if error_count > 0: 
                         print(f"📊 Error rate: {error_rate:.1f}% ({error_count}/{len(window)}) on {served_pool}", flush=True)
                     
                     if error_rate > ERROR_RATE_THRESHOLD * 100:
@@ -196,7 +196,7 @@ try:
                 consecutive_parse_failures += 1
                 if consecutive_parse_failures >= 10:
                     print(f"⚠️  Warning: {consecutive_parse_failures} consecutive parse failures", flush=True)
-                    consecutive_parse_failures = 0  # Reset counter
+                    consecutive_parse_failures = 0 
 
 except KeyboardInterrupt:
     print("\n👋 Watcher stopped by user", flush=True)
